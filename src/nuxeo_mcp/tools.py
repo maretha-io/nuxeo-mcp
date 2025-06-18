@@ -10,6 +10,7 @@ import json
 import os
 from typing import Any, Dict, Optional, Callable, List
 from nuxeo_mcp.utility import format_docs, format_page, format_doc
+from nuxeo.models import Document
 
 # Configure logging
 logger = logging.getLogger("nuxeo_mcp.tools")
@@ -271,3 +272,309 @@ def register_tools(mcp, nuxeo) -> None:
         
         # Return the raw result for other types
         return result
+
+
+    @mcp.tool(
+        name="create_document",
+        description="Create a new document in the Nuxeo repository")
+    def create_document(
+        name: str,
+        type: str,
+        properties: Dict[str, Any],
+        parent_path: str
+    ) -> Dict[str, Any]:
+        """
+        Create a new document in the Nuxeo repository.
+        
+        This tool creates a new document with the specified properties in the Nuxeo repository.
+        It supports creating any document type available in your Nuxeo instance, such as:
+        
+        - File: Standard document with attached content
+        - Folder: Container for other documents
+        - Note: Simple text document
+        - Workspace: Collaborative space for documents
+        - Picture: Image document with additional metadata
+        - Video: Video document with additional metadata
+        
+        ## Example Usage
+        
+        Create a folder:
+        ```
+        create_document(
+            name="my-folder",
+            type="Folder",
+            properties={"dc:title": "My Folder", "dc:description": "A test folder"},
+            parent_path="/default-domain/workspaces"
+        )
+        ```
+        
+        Create a file:
+        ```
+        create_document(
+            name="my-document",
+            type="File",
+            properties={
+                "dc:title": "My Document", 
+                "dc:description": "A test document"
+            },
+            parent_path="/default-domain/workspaces/my-folder"
+        )
+        ```
+        
+        Args:
+            name: The name of the document (used in the document's path)
+            type: The document type (e.g., 'File', 'Folder', 'Note')
+            properties: Dictionary of document properties (e.g., {"dc:title": "My Document"})
+            parent_path: Path of the parent document where this document will be created
+        
+        Returns:
+            The created document formatted as markdown
+        """
+        new_doc = Document(
+            name=name,
+            type=type,
+            properties=properties
+        )
+        
+        doc = nuxeo.documents.create(new_doc, parent_path=parent_path)
+        return format_doc(doc)
+
+
+    @mcp.tool(
+        name="get_document",
+        description="Get a document from the Nuxeo repository")
+    def get_document(
+        path: str = None,
+        uid: str = None,
+        fetch_blob: bool = False,
+        conversion_format: str = None,
+        rendition: str = None
+    ) -> Dict[str, Any]:
+        """
+        Get a document from the Nuxeo repository.
+        
+        This tool retrieves a document from the Nuxeo repository by path or UID.
+        It can also fetch the document's blob, convert it to a different format,
+        or fetch a rendition of the document.
+        
+        ## Document Identification
+        
+        You must provide either a path or a UID to identify the document:
+        - Path: The document's path in the repository (e.g., "/default-domain/workspaces/my-folder")
+        - UID: The document's unique identifier (e.g., "12345678-1234-1234-1234-123456789012")
+        
+        ## Blob Operations
+        
+        - fetch_blob: Set to true to fetch the document's main blob (if it has one)
+        - conversion_format: Convert the document to a different format (e.g., "pdf", "html")
+        - rendition: Fetch a specific rendition of the document (e.g., "thumbnail")
+        
+        ## Example Usage
+        
+        Get a document by path:
+        ```
+        get_document(path="/default-domain/workspaces/my-folder")
+        ```
+        
+        Get a document by UID:
+        ```
+        get_document(uid="12345678-1234-1234-1234-123456789012")
+        ```
+        
+        Get a document's thumbnail:
+        ```
+        get_document(
+            path="/default-domain/workspaces/my-document",
+            rendition="thumbnail"
+        )
+        ```
+        
+        Args:
+            path: Path of the document (mutually exclusive with uid)
+            uid: UID of the document (mutually exclusive with path)
+            fetch_blob: Whether to fetch the document's blob
+            conversion_format: Format to convert the document to (e.g., 'pdf')
+            rendition: Rendition to fetch (e.g., 'thumbnail')
+        
+        Returns:
+            The document formatted as markdown
+        """
+        if not path and not uid:
+            raise ValueError("Either path or uid must be provided")
+        
+        if path and uid:
+            raise ValueError("Only one of path or uid should be provided")
+        
+        doc = nuxeo.documents.get(path=path, uid=uid)
+        
+        # Handle blob operations if requested
+        blob_info = {}
+        
+        if fetch_blob:
+            try:
+                blob = doc.fetch_blob()
+                blob_info["blob"] = {
+                    "name": blob.name,
+                    "mime_type": blob.mime_type,
+                    "size": blob.size
+                }
+            except Exception as e:
+                blob_info["blob_error"] = str(e)
+        
+        if conversion_format:
+            try:
+                conversion = doc.convert({'format': conversion_format})
+                blob_info["conversion"] = {
+                    "format": conversion_format,
+                    "name": conversion.name,
+                    "mime_type": conversion.mime_type,
+                    "size": conversion.size
+                }
+            except Exception as e:
+                blob_info["conversion_error"] = str(e)
+        
+        if rendition:
+            try:
+                rendition_blob = doc.fetch_rendition(rendition)
+                blob_info["rendition"] = {
+                    "name": rendition,
+                    "mime_type": rendition_blob.mime_type,
+                    "size": rendition_blob.size
+                }
+            except Exception as e:
+                blob_info["rendition_error"] = str(e)
+        
+        # Format the document
+        result = format_doc(doc)
+        
+        # Add blob information if any
+        if blob_info:
+            result += "\n\n## Blob Information\n\n"
+            result += json.dumps(blob_info, indent=2)
+        
+        return result
+
+
+    @mcp.tool(
+        name="update_document",
+        description="Update an existing document in the Nuxeo repository")
+    def update_document(
+        path: str = None,
+        uid: str = None,
+        properties: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
+        """
+        Update an existing document in the Nuxeo repository.
+        
+        This tool updates an existing document in the Nuxeo repository with the specified properties.
+        You can identify the document to update by either its path or UID.
+        
+        ## Document Identification
+        
+        You must provide either a path or a UID to identify the document:
+        - Path: The document's path in the repository (e.g., "/default-domain/workspaces/my-folder")
+        - UID: The document's unique identifier (e.g., "12345678-1234-1234-1234-123456789012")
+        
+        ## Properties
+        
+        The properties parameter should be a dictionary of document properties to update.
+        Common properties include:
+        
+        - dc:title: Document title
+        - dc:description: Document description
+        - dc:creator: Document creator
+        - dc:contributors: Document contributors
+        - dc:created: Creation date
+        - dc:modified: Modification date
+        
+        ## Example Usage
+        
+        Update a document's title:
+        ```
+        update_document(
+            path="/default-domain/workspaces/my-folder",
+            properties={"dc:title": "Updated Folder Title"}
+        )
+        ```
+        
+        Update multiple properties:
+        ```
+        update_document(
+            uid="12345678-1234-1234-1234-123456789012",
+            properties={
+                "dc:title": "Updated Title",
+                "dc:description": "Updated Description"
+            }
+        )
+        ```
+        
+        Args:
+            path: Path of the document (mutually exclusive with uid)
+            uid: UID of the document (mutually exclusive with path)
+            properties: Dictionary of document properties to update
+        
+        Returns:
+            The updated document formatted as markdown
+        """
+        if not path and not uid:
+            raise ValueError("Either path or uid must be provided")
+        
+        if path and uid:
+            raise ValueError("Only one of path or uid should be provided")
+        
+        doc = nuxeo.documents.get(path=path, uid=uid)
+        
+        if properties:
+            for key, value in properties.items():
+                doc.properties[key] = value
+        
+        doc.save()
+        return format_doc(doc)
+
+
+    @mcp.tool(
+        name="delete_document",
+        description="Delete a document from the Nuxeo repository")
+    def delete_document(
+        path: str = None,
+        uid: str = None
+    ) -> Dict[str, Any]:
+        """
+        Delete a document from the Nuxeo repository.
+        
+        This tool deletes a document from the Nuxeo repository.
+        You can identify the document to delete by either its path or UID.
+        
+        ## Document Identification
+        
+        You must provide either a path or a UID to identify the document:
+        - Path: The document's path in the repository (e.g., "/default-domain/workspaces/my-folder")
+        - UID: The document's unique identifier (e.g., "12345678-1234-1234-1234-123456789012")
+        
+        ## Example Usage
+        
+        Delete a document by path:
+        ```
+        delete_document(path="/default-domain/workspaces/my-folder")
+        ```
+        
+        Delete a document by UID:
+        ```
+        delete_document(uid="12345678-1234-1234-1234-123456789012")
+        ```
+        
+        Args:
+            path: Path of the document (mutually exclusive with uid)
+            uid: UID of the document (mutually exclusive with path)
+        
+        Returns:
+            Status of the deletion operation
+        """
+        if not path and not uid:
+            raise ValueError("Either path or uid must be provided")
+        
+        if path and uid:
+            raise ValueError("Only one of path or uid should be provided")
+        
+        result = nuxeo.documents.delete(path=path, uid=uid)
+        return {"status": "success", "message": f"Document deleted successfully"}
