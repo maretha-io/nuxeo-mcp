@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nuxeo-mcp"
+version = "0.1.0"
+description = "MCP Server for Nuxeo Content Repository"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Nuxeo MCP Team", email = "example@example.com"}
+]
+dependencies = [
+    "fastmcp>=2.8.0",
+    "nuxeo>=6.0.0",
+    "docker>=7.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+nuxeo-mcp = "nuxeo_mcp.server:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+python_classes = "Test*"
+addopts = "--verbose"
+markers = [
+    "unit: marks tests as unit tests (default)",
+    "integration: marks tests as integration tests that require external services like Nuxeo",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py39"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true

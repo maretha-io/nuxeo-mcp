@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+"""
+Utility functions for the Nuxeo MCP Server.
+
+This module provides utility functions for working with Nuxeo documents and other
+common tasks.
+"""
+
+import re
+from typing import Dict, Any, List, Tuple, Set
+from nuxeo.models import Document
+
+
+def format_page(result: Dict[str, Any]) -> str:
+
+    md_output :list[str]= []
+
+    md_output.append(f" resultsCount: {result["resultsCount"]}")
+    md_output.append(f" pageIndex: {result["pageIndex"]}")
+    md_output.append(f" pageCount: {result["pageCount"]}")
+    
+    return format_docs(result["entries"], md_output)
+
+
+def format_docs(docs: list[Document], md_output :list[str]|None=None) -> str:
+
+    if md_output is None:
+        md_output :list[str]= []
+
+    md_output.append("| uuid | name | title | type |")
+    md_output.append("| ---- | ---- | ----- | ---- |")
+
+    for doc in docs:
+        md_output.append(f"| {doc.uid} | {doc.path.split("/")[-1]} | {doc.title} | {doc.type} |")
+
+    return "\n".join(md_output)
+
+def format_doc(doc: Dict[str, Any]|Document) -> str:
+    """
+    Format a Nuxeo document as markdown text.
+    
+    Args:
+        doc: A Nuxeo document as a dictionary
+        
+    Returns:
+        A markdown formatted string representing the document
+    """
+    if not doc:
+        return "No document provided"
+    
+    if type(doc) == Document:
+        doc = doc.as_dict()
+
+    # Extract basic document information
+    uid = doc.get('uid', 'Unknown')
+    doc_type = doc.get('type', 'Unknown')
+    title = doc.get('title', 'Untitled')
+    path = doc.get('path', 'Unknown')
+    facets = doc.get('facets', [])
+    
+    # Extract flags
+    is_proxy = doc.get('isProxy', False)
+    is_checked_out = doc.get('isCheckedOut', False)
+    is_trashed = doc.get('isTrashed', False)
+    is_version = doc.get('isVersion', False)
+    
+    # Start building the markdown output
+    md_output = f"# Document: {title}\n\n"
+    
+    # Add basic information
+    md_output += "## Basic Information\n\n"
+    md_output += f"- **UID**: {uid}\n"
+    md_output += f"- **Type**: {doc_type}\n"
+    md_output += f"- **Path**: {path}\n"
+    
+    # Add facets
+    if facets:
+        md_output += f"- **Facets**: {', '.join(facets)}\n"
+    else:
+        md_output += "- **Facets**: None\n"
+    
+    # Add flags
+    md_output += "\n## Flags\n\n"
+    md_output += f"- **Is Proxy**: {is_proxy}\n"
+    md_output += f"- **Is Checked Out**: {is_checked_out}\n"
+    md_output += f"- **Is Trashed**: {is_trashed}\n"
+    md_output += f"- **Is Version**: {is_version}\n"
+    
+    # Process properties
+    properties = doc.get('properties', {})
+    if properties:
+        md_output += "\n## Properties\n\n"
+        
+        # Group properties by namespace
+        namespaces: Dict[str, List[Tuple[str, Any]]] = {}
+        
+        for prop_key, prop_value in properties.items():
+            # Extract namespace from property key (e.g., "dc:title" -> "dc")
+            namespace = prop_key.split(':')[0] if ':' in prop_key else 'other'
+            
+            if namespace not in namespaces:
+                namespaces[namespace] = []
+            
+            namespaces[namespace].append((prop_key, prop_value))
+        
+        # Create a table for each namespace
+        for namespace, props in namespaces.items():
+            md_output += f"### {namespace.upper()} Namespace\n\n"
+            md_output += "| Property | Value |\n"
+            md_output += "|----------|-------|\n"
+            
+            for prop_key, prop_value in props:
+                # Format the property value for display
+                formatted_value = format_property_value(prop_value)
+                md_output += f"| {prop_key} | {formatted_value} |\n"
+            
+            md_output += "\n"
+    
+    return md_output
+
+
+def format_property_value(value: Any) -> str:
+    """
+    Format a property value for display in markdown.
+    
+    Args:
+        value: The property value to format
+        
+    Returns:
+        A string representation of the value suitable for markdown
+    """
+    if value is None:
+        return "*None*"
+    elif isinstance(value, list):
+        if not value:
+            return "*Empty list*"
+        return ", ".join(str(item) for item in value)
+    elif isinstance(value, dict):
+        if not value:
+            return "*Empty object*"
+        return "*Complex object*"
+    elif isinstance(value, bool):
+        return str(value)
+    elif isinstance(value, (int, float)):
+        return str(value)
+    elif isinstance(value, str):
+        if not value:
+            return "*Empty string*"
+        # Escape pipe characters in markdown tables
+        return value.replace('|', '\\|')
+    else:
+        return str(value)
