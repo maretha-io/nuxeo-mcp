@@ -248,10 +248,8 @@ def register_tools(mcp, nuxeo) -> None:
             operation.params = params
         
         # Set input based on input_type
-        if input_type == 'document_path':
+        if input_type in ['document_path', 'document_uid', 'document'] :
             operation.input_obj = input_value
-        elif input_type == 'document_uid':
-            operation.input_obj = nuxeo.documents.get(uid=input_value)
         elif input_type == 'file' and file_path:
             # Check if file exists
             if not os.path.exists(file_path):
