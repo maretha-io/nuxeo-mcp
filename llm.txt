@@ -7,15 +7,29 @@ This document provides instructions for AI agents to install, run, and use the N
 ### Prerequisites
 - Python 3.10 or higher
 - pip (Python package manager)
+- git
 - A Nuxeo server instance (can be run via Docker)
 
 ### Installation Steps
 ```bash
-# Install the Nuxeo MCP Server
-pip install nuxeo-mcp
+# Clone the repository
+git clone https://github.com/tiry/nx-mcp-poc.git
+cd nx-mcp-poc
+
+# Create a virtual environment
+python -m venv venv
+
+# Activate the virtual environment
+# On Unix/macOS:
+source venv/bin/activate
+# On Windows:
+# venv\Scripts\activate
+
+# Install the package in development mode
+pip install -e ".[dev]"
 
 # Verify installation
-pip show nuxeo-mcp
+python -c "import nuxeo_mcp; print(nuxeo_mcp.__file__)"
 ```
 
 ### Docker Installation for Nuxeo Server (Optional)
@@ -35,16 +49,14 @@ curl http://localhost:8080/nuxeo/runningstatus
 ### Basic Command
 ```bash
 # Start the MCP server with default settings
-nuxeo-mcp
-
-# Alternative methods
+# Make sure your virtual environment is activated
 python -m nuxeo_mcp
 ```
 
 ### Configuration Options
 ```bash
 # With custom configuration via environment variables
-NUXEO_URL="http://mynuxeo.example.com/nuxeo" NUXEO_USERNAME="admin" NUXEO_PASSWORD="secret" nuxeo-mcp
+NUXEO_URL="http://mynuxeo.example.com/nuxeo" NUXEO_USERNAME="admin" NUXEO_PASSWORD="secret" python -m nuxeo_mcp
 ```
 
 ### Verification
