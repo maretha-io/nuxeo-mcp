@@ -124,6 +124,8 @@ jobs:
         docker pull docker-private.packages.nuxeo.com/nuxeo/nuxeo:2025
         
     - name: Run integration tests
+      env:
+        NUXEO_DOCKER_IMAGE: docker-private.packages.nuxeo.com/nuxeo/nuxeo:2025
       run: |
         python -m pytest tests/ -v --integration
 ```
