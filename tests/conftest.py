@@ -17,7 +17,7 @@ from _pytest.config import Config
 from _pytest.config.argparsing import Parser
 from _pytest.nodes import Item
 
-# Add a command line option to run integration tests
+# Add command line options for integration tests and Docker configuration
 def pytest_addoption(parser: Parser) -> None:
     parser.addoption(
         "--integration",
@@ -25,13 +25,26 @@ def pytest_addoption(parser: Parser) -> None:
         default=False,
         help="Run integration tests that require external services like Nuxeo",
     )
+    parser.addoption(
+        "--no-integration",
+        action="store_true",
+        default=False,
+        help="Skip integration tests",
+    )
+    parser.addoption(
+        "--rancher",
+        action="store_true",
+        default=False,
+        help="Use Rancher Desktop Docker socket",
+    )
 
 # Skip integration tests unless --integration is specified
 def pytest_configure(config: Config) -> None:
     config.addinivalue_line("markers", "integration: mark test as integration test")
 
 def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
-    if not config.getoption("--integration"):
+    # Skip integration tests if --integration is not specified or --no-integration is specified
+    if not config.getoption("--integration") or config.getoption("--no-integration"):
         skip_integration = pytest.mark.skip(reason="Need --integration option to run")
         for item in items:
             if "integration" in item.keywords:
@@ -39,13 +52,30 @@ def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
 
 
 @pytest.fixture(scope="session")
-def docker_client() -> docker.DockerClient:
-    """Create a Docker client."""
-    # Use the correct Docker socket location for Rancher Desktop
-    return docker.DockerClient(base_url="unix:///Users/thierry.delprat/.rd/docker.sock")
+def docker_client(request: pytest.FixtureRequest) -> docker.DockerClient:
+    """
+    Create a Docker client.
+    
+    This fixture creates a Docker client based on the environment:
+    - If --rancher is specified or USE_RANCHER environment variable is set,
+      it uses the Rancher Desktop Docker socket.
+    - Otherwise, it uses the default Docker socket.
+    """
+    # Check if we should use Rancher Desktop Docker socket
+    use_rancher = request.config.getoption("--rancher") or os.environ.get("USE_RANCHER", "").lower() in ("true", "1", "yes")
+    
+    if use_rancher:
+        # Use the Docker socket location for Rancher Desktop
+        print("Using Rancher Desktop Docker socket", flush=True)
+        return docker.DockerClient(base_url="unix:///Users/thierry.delprat/.rd/docker.sock")
+    else:
+        # Use the default Docker socket location
+        print("Using default Docker socket", flush=True)
+        return docker.DockerClient()
 
 
-NUXEO_DOCKER= "nuxeo/nuxeo-2025:latest"
+# Get the Nuxeo Docker image from environment variable or use default
+NUXEO_DOCKER = os.environ.get("NUXEO_DOCKER_IMAGE", "nuxeo/nuxeo-2025:latest")
 
 @pytest.fixture(scope="session")
 def nuxeo_container(docker_client: docker.DockerClient, request: pytest.FixtureRequest) -> Generator[Optional[docker.models.containers.Container], None, None]:
