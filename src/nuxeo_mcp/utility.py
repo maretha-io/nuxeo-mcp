@@ -25,11 +25,11 @@ def format_page(result: Dict[str, Any]) -> str:
 
     md_output :list[str]= []
 
-    md_output.append(f" resultsCount: {result["resultsCount"]}")
-    md_output.append(f" pageIndex: {result["pageIndex"]}")
-    md_output.append(f" pageCount: {result["pageCount"]}")
+    md_output.append(f" resultsCount: {result['resultsCount']}")
+    md_output.append(f" pageIndex: {result['pageIndex']}")
+    md_output.append(f" pageCount: {result['pageCount']}")
     
-    return format_docs(result["entries"], md_output)
+    return format_docs(result['entries'], md_output)
 
 
 def format_docs(docs: list[Document], md_output :list[str]|None=None) -> str:
