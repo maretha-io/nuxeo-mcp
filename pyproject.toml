@@ -16,6 +16,8 @@ dependencies = [
     "fastmcp>=2.8.0",
     "nuxeo>=6.0.0",
     "docker>=7.0.0",
+    "pillow>=10.0.0",
+    "reportlab>=4.0.0",
 ]
 
 [project.optional-dependencies]

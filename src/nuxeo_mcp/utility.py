@@ -9,7 +9,17 @@ common tasks.
 import re
 from typing import Dict, Any, List, Tuple, Set
 from nuxeo.models import Document
+from fastmcp.utilities.types import Image
 
+
+def format_result(result:Any) -> str|Image:
+
+    if hasattr(result, 'is_document') and result.is_document:
+        return format_doc(result)
+    elif isinstance(result, list) and len(result) > 0 and hasattr(result[0], 'is_document') and result[0].is_document:
+        return format_docs(result)
+
+    return None
 
 def format_page(result: Dict[str, Any]) -> str:
 
@@ -150,3 +160,11 @@ def format_property_value(value: Any) -> str:
         return value.replace('|', '\\|')
     else:
         return str(value)
+
+
+def return_blob(blob_info:dict):
+
+    if "image/" in blob_info["mime_type"]:
+        return Image(data=blob_info["content"])
+
+    return blob_info["content"]

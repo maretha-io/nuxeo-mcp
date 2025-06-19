@@ -9,8 +9,9 @@ import logging
 import json
 import os
 from typing import Any, Dict, Optional, Callable, List
-from nuxeo_mcp.utility import format_docs, format_page, format_doc
+from nuxeo_mcp.utility import format_docs, format_page, format_doc, return_blob
 from nuxeo.models import Document
+from fastmcp.utilities.types import Image
 
 # Configure logging
 logger = logging.getLogger("nuxeo_mcp.tools")
@@ -349,7 +350,7 @@ def register_tools(mcp, nuxeo) -> None:
         fetch_blob: bool = False,
         conversion_format: str = None,
         rendition: str = None
-    ) -> Dict[str, Any]:
+    ) -> str|bytes|Image:
         """
         Get a document from the Nuxeo repository.
         
@@ -397,7 +398,7 @@ def register_tools(mcp, nuxeo) -> None:
             rendition: Rendition to fetch (e.g., 'thumbnail')
         
         Returns:
-            The document formatted as markdown
+            The document formatted as markdown or the blob
         """
         if not path and not uid:
             raise ValueError("Either path or uid must be provided")
@@ -412,46 +413,75 @@ def register_tools(mcp, nuxeo) -> None:
         
         if fetch_blob:
             try:
-                blob = doc.fetch_blob()
-                blob_info["blob"] = {
-                    "name": blob.name,
-                    "mime_type": blob.mime_type,
-                    "size": blob.size
+                # built in method do not propagate headers
+                # blob = doc.fetch_blob()
+
+                r=nuxeo.client.request('GET', f"api/v1/repo/default/id/{doc.uid}/@blob/blobholder:0")
+
+                disposition = r.headers["content-disposition"]
+                filename = disposition.split(";")[-1].split("=")[-1]
+                mime= r.headers["content-type"]
+                content_length = int(r.headers["content-length"])
+
+                blob_info = {
+                    "name": filename,
+                    "mime_type": mime,
+                    "size": content_length,
+                    "content" : r.content
                 }
+                return return_blob(blob_info)
             except Exception as e:
                 blob_info["blob_error"] = str(e)
         
         if conversion_format:
             try:
+                # built in method do not propagate headers
+                # conversion = doc.convert({'format': conversion_format})
+
+                r=nuxeo.client.request('GET', path=f"api/v1/repo/default/id/{doc.uid}", adapter="blob/blobholder:0/@convert", params={"format":conversion_format})
+                disposition = r.headers["content-disposition"]
+                filename = disposition.split(";")[-1].split("=")[-1]
+                mime= r.headers["content-type"]
+                content_length = int(r.headers["content-length"])
+
                 conversion = doc.convert({'format': conversion_format})
-                blob_info["conversion"] = {
+                blob_info = {
                     "format": conversion_format,
-                    "name": conversion.name,
-                    "mime_type": conversion.mime_type,
-                    "size": conversion.size
+                    "name": filename,
+                    "mime_type": mime,
+                    "size": content_length,
+                    "content" : r.content
                 }
+                return return_blob(blob_info)
             except Exception as e:
                 blob_info["conversion_error"] = str(e)
         
         if rendition:
             try:
-                rendition_blob = doc.fetch_rendition(rendition)
-                blob_info["rendition"] = {
-                    "name": rendition,
-                    "mime_type": rendition_blob.mime_type,
-                    "size": rendition_blob.size
+                # built in method do not propagate headers
+                # rendition_blob = doc.fetch_rendition(rendition)
+                adapter = f"rendition/{rendition}"
+                r=nuxeo.client.request('GET', path=f"api/v1/repo/default/id/{doc.uid}", adapter=adapter)
+                disposition = r.headers["content-disposition"]
+                filename = disposition.split(";")[-1].split("=")[-1]
+                mime= r.headers["content-type"]
+                content_length = int(r.headers["content-length"])
+
+                blob_info = {
+                    "name": filename,
+                    "mime_type": mime,
+                    "size": content_length,
+                    "content" : r.content                
                 }
+
+                return return_blob(blob_info)
+
             except Exception as e:
-                blob_info["rendition_error"] = str(e)
+                return str(e)
         
         # Format the document
         result = format_doc(doc)
-        
-        # Add blob information if any
-        if blob_info:
-            result += "\n\n## Blob Information\n\n"
-            result += json.dumps(blob_info, indent=2)
-        
+               
         return result
 
 
