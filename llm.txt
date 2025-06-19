@@ -1,0 +1,219 @@
+# Nuxeo MCP Server Instructions for AI Agents
+
+This document provides instructions for AI agents to install, run, and use the Nuxeo MCP Server.
+
+## 1. INSTALLATION
+
+### Prerequisites
+- Python 3.10 or higher
+- pip (Python package manager)
+- A Nuxeo server instance (can be run via Docker)
+
+### Installation Steps
+```bash
+# Install the Nuxeo MCP Server
+pip install nuxeo-mcp
+
+# Verify installation
+pip show nuxeo-mcp
+```
+
+### Docker Installation for Nuxeo Server (Optional)
+```bash
+# Pull the Nuxeo Docker image
+docker pull nuxeo/nuxeo:latest
+
+# Run Nuxeo container
+docker run -d --name nuxeo -p 8080:8080 -e NUXEO_DEV_MODE=true nuxeo/nuxeo:latest
+
+# Verify Nuxeo is running
+curl http://localhost:8080/nuxeo/runningstatus
+```
+
+## 2. RUNNING THE SERVER
+
+### Basic Command
+```bash
+# Start the MCP server with default settings
+nuxeo-mcp
+
+# Alternative methods
+python -m nuxeo_mcp
+```
+
+### Configuration Options
+```bash
+# With custom configuration via environment variables
+NUXEO_URL="http://mynuxeo.example.com/nuxeo" NUXEO_USERNAME="admin" NUXEO_PASSWORD="secret" nuxeo-mcp
+```
+
+### Verification
+The server will output a message indicating it's running and listening for connections.
+
+## 3. AVAILABLE TOOLS AND RESOURCES
+
+### Tools
+
+1. `get_repository_info`
+   - Description: Get information about the Nuxeo repository
+   - Input: `{}`
+   - Example: `use_tool("nuxeo", "get_repository_info", {})`
+
+2. `get_children`
+   - Description: Get the children of a document
+   - Input: `{"path": "/default-domain/workspaces"}`
+   - Example: `use_tool("nuxeo", "get_children", {"path": "/default-domain/workspaces"})`
+
+3. `search`
+   - Description: Search for documents
+   - Input: `{"query": "SELECT * FROM Document", "pageSize": 10, "currentPageIndex": 0}`
+   - Example: `use_tool("nuxeo", "search", {"query": "SELECT * FROM Document", "pageSize": 10, "currentPageIndex": 0})`
+
+4. `get_document`
+   - Description: Get a document by path or ID
+   - Input: `{"path": "/default-domain/workspaces/My Document"}` or `{"uid": "document-uuid"}`
+   - Options: `blob: true` to get the document's blob, `rendition: "thumbnail"` to get a rendition
+   - Example: `use_tool("nuxeo", "get_document", {"path": "/default-domain/workspaces/My Document"})`
+
+5. `create_document`
+   - Description: Create a new document
+   - Input: `{"parent_path": "/default-domain/workspaces", "name": "My Document", "type": "File", "properties": {"dc:title": "My Document"}}`
+   - Example: `use_tool("nuxeo", "create_document", {"parent_path": "/default-domain/workspaces", "name": "My Document", "type": "File", "properties": {"dc:title": "My Document"}})`
+
+6. `update_document`
+   - Description: Update an existing document
+   - Input: `{"path": "/default-domain/workspaces/My Document", "properties": {"dc:title": "Updated Title"}}`
+   - Example: `use_tool("nuxeo", "update_document", {"path": "/default-domain/workspaces/My Document", "properties": {"dc:title": "Updated Title"}})`
+
+7. `delete_document`
+   - Description: Delete a document
+   - Input: `{"path": "/default-domain/workspaces/My Document"}`
+   - Example: `use_tool("nuxeo", "delete_document", {"path": "/default-domain/workspaces/My Document"})`
+
+### Resources
+
+1. `nuxeo://info`
+   - Description: Basic information about the connected Nuxeo server
+   - Example: `access_resource("nuxeo", "nuxeo://info")`
+
+2. `nuxeo://document/{path}`
+   - Description: Get a document by path
+   - Example: `access_resource("nuxeo", "nuxeo://document/default-domain/workspaces/My Document")`
+
+3. `nuxeo://document/id/{uid}`
+   - Description: Get a document by ID
+   - Example: `access_resource("nuxeo", "nuxeo://document/id/document-uuid")`
+
+### Discovering Tools and Resources
+Use the MCP Inspector to discover available tools and resources:
+```bash
+npx @modelcontextprotocol/inspector python -m nuxeo_mcp
+```
+
+## 4. CONFIGURATION
+
+### Environment Variables
+- `NUXEO_URL`: URL of the Nuxeo server (default: `http://localhost:8080/nuxeo`)
+- `NUXEO_USERNAME`: Username for Nuxeo authentication (default: `Administrator`)
+- `NUXEO_PASSWORD`: Password for Nuxeo authentication (default: `Administrator`)
+
+### Configuration File
+Create a file named `nuxeo_mcp_config.json` with the following content:
+```json
+{
+  "nuxeo_url": "http://localhost:8080/nuxeo",
+  "username": "Administrator",
+  "password": "Administrator"
+}
+```
+
+### Cline Configuration
+Add to Cline MCP settings file:
+```json
+{
+  "mcpServers": {
+    "nuxeo": {
+      "command": "python",
+      "args": ["-m", "nuxeo_mcp"]
+    }
+  }
+}
+```
+
+## 5. TROUBLESHOOTING
+
+### Common Issues
+
+1. Connection Issues
+   - Ensure Nuxeo server is running
+   - Verify URL, username, and password
+   - Check network connectivity
+
+2. Authentication Issues
+   - Verify credentials
+   - Check user permissions
+
+3. Document Not Found
+   - Verify document path or ID
+   - Check if document exists in Nuxeo
+
+### Using MCP Inspector
+```bash
+# Install MCP Inspector
+npm install -g @modelcontextprotocol/inspector
+
+# Run MCP Inspector with Nuxeo MCP Server
+npx @modelcontextprotocol/inspector python -m nuxeo_mcp
+
+# Access web interface at http://localhost:3000
+```
+
+## 6. EXAMPLE WORKFLOW
+
+```python
+# Import necessary modules
+from fastmcp import use_tool, access_resource
+
+# Get repository info
+repo_info = use_tool("nuxeo", "get_repository_info", {})
+print(f"Connected to repository: {repo_info['name']}")
+
+# Search for documents
+search_results = use_tool("nuxeo", "search", {
+    "query": "SELECT * FROM Document WHERE ecm:primaryType = 'File'",
+    "pageSize": 5
+})
+print(f"Found {search_results['resultsCount']} documents")
+
+# Create a new document
+new_doc = use_tool("nuxeo", "create_document", {
+    "parent_path": "/default-domain/workspaces",
+    "name": "My New Document",
+    "type": "File",
+    "properties": {
+        "dc:title": "My New Document",
+        "dc:description": "Created by MCP"
+    }
+})
+print(f"Created document with ID: {new_doc['uid']}")
+
+# Get document details
+doc_details = use_tool("nuxeo", "get_document", {
+    "path": "/default-domain/workspaces/My New Document"
+})
+print(f"Document title: {doc_details['title']}")
+
+# Update document
+updated_doc = use_tool("nuxeo", "update_document", {
+    "path": "/default-domain/workspaces/My New Document",
+    "properties": {
+        "dc:description": "Updated by MCP"
+    }
+})
+print("Document updated successfully")
+
+# Delete document
+delete_result = use_tool("nuxeo", "delete_document", {
+    "path": "/default-domain/workspaces/My New Document"
+})
+print("Document deleted successfully")
