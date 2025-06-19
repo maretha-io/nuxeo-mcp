@@ -41,7 +41,7 @@ def format_docs(docs: list[Document], md_output :list[str]|None=None) -> str:
     md_output.append("| ---- | ---- | ----- | ---- |")
 
     for doc in docs:
-        md_output.append(f"| {doc.uid} | {doc.path.split("/")[-1]} | {doc.title} | {doc.type} |")
+        md_output.append(f"| {doc.uid} | {doc.path.split('/')[-1]} | {doc.title} | {doc.type} |")
 
     return "\n".join(md_output)
 
