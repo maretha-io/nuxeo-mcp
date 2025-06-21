@@ -192,13 +192,18 @@ def test_get_children_tool(nuxeo_container: Any, nuxeo_url: str, nuxeo_credentia
     result = get_children_tool(path="/default-domain/workspaces")
     
     # Check the result
-    assert isinstance(result, str), "Expected a string result"
-    assert "| uuid | name | title | type |" in result, "Expected table header in result"
+    assert isinstance(result, dict), "Expected a dictionary result"
+    assert "content" in result, "Expected content key in result"
+    assert "content_type" in result, "Expected content_type key in result"
+    assert result["content_type"] == "text/markdown", "Expected markdown content type"
+    
+    content = result["content"]
+    assert "| uuid | name | title | type |" in content, "Expected table header in result"
     
     # The result should contain the seeded folder
-    assert "MCP Test Folder" in result, "Expected seeded folder in result"
+    assert "MCP Test Folder" in content, "Expected seeded folder in result"
     
-    print(f"Children of /default-domain/workspaces:\n{result}")
+    print(f"Children of /default-domain/workspaces:\n{content}")
 
 
 @pytest.mark.integration
@@ -229,13 +234,18 @@ def test_search_tool(nuxeo_container: Any, nuxeo_url: str, nuxeo_credentials: Tu
     result = search_tool(query="SELECT * FROM Folder")
     
     # Check the result
-    assert isinstance(result, str), "Expected a string result"
-    assert "| uuid | name | title | type |" in result, "Expected table header in result"
+    assert isinstance(result, dict), "Expected a dictionary result"
+    assert "content" in result, "Expected content key in result"
+    assert "content_type" in result, "Expected content_type key in result"
+    assert result["content_type"] == "text/markdown", "Expected markdown content type"
+    
+    content = result["content"]
+    assert "| uuid | name | title | type |" in content, "Expected table header in result"
     
     # The result should contain the seeded folder
-    assert "MCP Test Folder" in result, "Expected seeded folder in result"
+    assert "MCP Test Folder" in content, "Expected seeded folder in result"
     
-    print(f"Search results for 'SELECT * FROM Folder':\n{result}")
+    print(f"Search results for 'SELECT * FROM Folder':\n{content}")
 
 
 @pytest.mark.integration
@@ -303,12 +313,17 @@ def test_get_document_by_path_resource(nuxeo_container: Any, nuxeo_url: str, nux
     result = get_document_by_path_resource("default-domain")
     
     # Check the result
-    assert isinstance(result, str), "Expected a string result"
-    assert "# Document:" in result, "Expected document title in result"
-    assert "**Type**: Domain" in result, "Expected document type in result"
-    assert "**Path**: /default-domain" in result, "Expected document path in result"
+    assert isinstance(result, dict), "Expected a dictionary result"
+    assert "content" in result, "Expected content key in result"
+    assert "content_type" in result, "Expected content_type key in result"
+    assert result["content_type"] == "text/markdown", "Expected markdown content type"
     
-    print(f"Document at path 'default-domain':\n{result}")
+    content = result["content"]
+    assert "# Document:" in content, "Expected document title in result"
+    assert "**Type**: Domain" in content, "Expected document type in result"
+    assert "**Path**: /default-domain" in content, "Expected document path in result"
+    
+    print(f"Document at path 'default-domain':\n{content}")
 
 
 @pytest.mark.integration
@@ -349,10 +364,15 @@ def test_get_document_by_uid_resource(nuxeo_container: Any, nuxeo_url: str, nuxe
     result = get_document_by_uid_resource(root_uid)
     
     # Check the result
-    assert isinstance(result, str), "Expected a string result"
-    assert "# Document:" in result, "Expected document title in result"
-    assert "**Type**: Root" in result, "Expected document type in result"
-    assert "**Path**: /" in result, "Expected document path in result"
-    assert f"**UID**: {root_uid}" in result, "Expected document UID in result"
+    assert isinstance(result, dict), "Expected a dictionary result"
+    assert "content" in result, "Expected content key in result"
+    assert "content_type" in result, "Expected content_type key in result"
+    assert result["content_type"] == "text/markdown", "Expected markdown content type"
     
-    print(f"Document with UID '{root_uid}':\n{result}")
+    content = result["content"]
+    assert "# Document:" in content, "Expected document title in result"
+    assert "**Type**: Root" in content, "Expected document type in result"
+    assert "**Path**: /" in content, "Expected document path in result"
+    assert f"**UID**: {root_uid}" in content, "Expected document UID in result"
+    
+    print(f"Document with UID '{root_uid}':\n{content}")

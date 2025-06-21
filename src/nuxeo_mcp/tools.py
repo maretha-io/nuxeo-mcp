@@ -446,7 +446,6 @@ def register_tools(mcp, nuxeo) -> None:
                 mime= r.headers["content-type"]
                 content_length = int(r.headers["content-length"])
 
-                conversion = doc.convert({'format': conversion_format})
                 blob_info = {
                     "format": conversion_format,
                     "name": filename,
@@ -456,7 +455,10 @@ def register_tools(mcp, nuxeo) -> None:
                 }
                 return return_blob(blob_info)
             except Exception as e:
-                blob_info["conversion_error"] = str(e)
+                # Log the error for debugging
+                logger.error(f"Conversion error: {e}")
+                # Return error information instead of continuing
+                return {"error": f"Conversion failed: {str(e)}"}
         
         if rendition:
             try:
