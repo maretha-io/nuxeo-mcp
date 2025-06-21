@@ -211,7 +211,7 @@ DANGEROUSLY_OMIT_AUTH=true npx @modelcontextprotocol/inspector \
 
 Note: The `DANGEROUSLY_OMIT_AUTH=true` flag is used to bypass authentication for local testing. Do not use this in production environments.
 
-3. The MCP Inspector will start a web server that you can access at http://localhost:3000
+3. The MCP Inspector will start a web server that you can access at http://localhost:6277
 
 4. Use the MCP Inspector to explore the tools and resources provided by the Nuxeo MCP Server:
    - View available tools and their input schemas
