@@ -105,7 +105,9 @@ def register_tools(mcp, nuxeo) -> None:
             
 
         Returns:
-            List of documents
+            json object with 2 keys:
+                "content" : the formatted list of documents,
+                "content_type" : format used - for example "text/markdown"
         """
 
         return format_page(nuxeo.documents.query({"query" : query, "pageSize" : pageSize, "currentPageIndex": currentPageIndex }))
@@ -566,7 +568,6 @@ def register_tools(mcp, nuxeo) -> None:
         name="delete_document",
         description="Delete a document from the Nuxeo repository")
     def delete_document(
-        path: str = None,
         uid: str = None
     ) -> Dict[str, Any]:
         """
@@ -577,34 +578,24 @@ def register_tools(mcp, nuxeo) -> None:
         
         ## Document Identification
         
-        You must provide either a path or a UID to identify the document:
-        - Path: The document's path in the repository (e.g., "/default-domain/workspaces/my-folder")
+        You must provide a UID to identify the document:
         - UID: The document's unique identifier (e.g., "12345678-1234-1234-1234-123456789012")
         
         ## Example Usage
-        
-        Delete a document by path:
-        ```
-        delete_document(path="/default-domain/workspaces/my-folder")
-        ```
-        
+                
         Delete a document by UID:
         ```
         delete_document(uid="12345678-1234-1234-1234-123456789012")
         ```
         
         Args:
-            path: Path of the document (mutually exclusive with uid)
             uid: UID of the document (mutually exclusive with path)
         
         Returns:
             Status of the deletion operation
         """
-        if not path and not uid:
-            raise ValueError("Either path or uid must be provided")
+        if not uid:
+            raise ValueError("uid must be provided")
         
-        if path and uid:
-            raise ValueError("Only one of path or uid should be provided")
-        
-        result = nuxeo.documents.delete(path=path, uid=uid)
+        result = nuxeo.documents.delete(uid=uid)
         return {"status": "success", "message": f"Document deleted successfully"}

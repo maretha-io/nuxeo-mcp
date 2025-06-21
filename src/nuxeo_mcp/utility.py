@@ -43,7 +43,10 @@ def format_docs(docs: list[Document], md_output :list[str]|None=None) -> str:
     for doc in docs:
         md_output.append(f"| {doc.uid} | {doc.path.split('/')[-1]} | {doc.title} | {doc.type} |")
 
-    return "\n".join(md_output)
+    return {
+        "content" : "\n".join(md_output),
+        "content_type" : "text/markdown"
+    }
 
 def format_doc(doc: Dict[str, Any]|Document) -> str:
     """
@@ -126,7 +129,12 @@ def format_doc(doc: Dict[str, Any]|Document) -> str:
             
             md_output += "\n"
     
-    return md_output
+
+    return {
+        "content" : md_output,
+        "content_type" : "text/markdown"
+    }
+    #return md_output
 
 
 def format_property_value(value: Any) -> str:
