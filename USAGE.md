@@ -201,11 +201,15 @@ To use the MCP Inspector:
 npm install -g @modelcontextprotocol/inspector
 ```
 
-2. Run the MCP Inspector with the Nuxeo MCP Server:
+2. Run the MCP Inspector with the Nuxeo MCP Server using the provided configuration file:
 
 ```bash
-npx @modelcontextprotocol/inspector python -m nuxeo_mcp
+DANGEROUSLY_OMIT_AUTH=true npx @modelcontextprotocol/inspector \
+  --config mcp.json \
+  --server default
 ```
+
+Note: The `DANGEROUSLY_OMIT_AUTH=true` flag is used to bypass authentication for local testing. Do not use this in production environments.
 
 3. The MCP Inspector will start a web server that you can access at http://localhost:3000
 

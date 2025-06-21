@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "default": {
+      "command": "python",
+      "args": ["-m", "nuxeo_mcp"],
+      "env": { },
+      "transport": "stdio"
+    }
+  }
+}
