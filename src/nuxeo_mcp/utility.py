@@ -48,7 +48,7 @@ def format_docs(docs: list[Document], md_output :list[str]|None=None) -> str:
         "content_type" : "text/markdown"
     }
 
-def format_doc(doc: Dict[str, Any]|Document) -> str:
+def format_doc(doc: Dict[str, Any]|Document) -> Dict[str, str]:
     """
     Format a Nuxeo document as markdown text.
     
@@ -56,10 +56,13 @@ def format_doc(doc: Dict[str, Any]|Document) -> str:
         doc: A Nuxeo document as a dictionary
         
     Returns:
-        A markdown formatted string representing the document
+        A dictionary with content and content_type keys
     """
     if not doc:
-        return "No document provided"
+        return {
+            "content": "No document provided",
+            "content_type": "text/plain"
+        }
     
     if type(doc) == Document:
         doc = doc.as_dict()
