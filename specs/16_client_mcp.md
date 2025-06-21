@@ -261,7 +261,7 @@ jobs:
         
     - name: Start services with Docker Compose
       run: |
-        docker-compose up -d
+        docker compose up -d
         
     - name: Wait for Nuxeo to start
       run: |

@@ -37,32 +37,54 @@ def test_format_doc() -> None:
     # Format the document
     formatted = format_doc(doc)
     
+    # Check that the formatted document is a dictionary with content and content_type
+    assert isinstance(formatted, dict)
+    assert 'content' in formatted
+    assert 'content_type' in formatted
+    assert formatted['content_type'] == 'text/markdown'
+    
+    content = formatted['content']
+    
     # Check that the formatted document contains the expected information
-    assert 'Document: Test Document' in formatted
-    assert '**UID**: dbaccb2c-7bbc-4326-9330-b1bc08dc9e09' in formatted
-    assert '**Type**: Root' in formatted
-    assert '**Path**: /' in formatted
-    assert '**Facets**: Folderish, NXTag, NotCollectionMember' in formatted
-    assert '**Is Proxy**: False' in formatted
-    assert '**Is Checked Out**: True' in formatted
-    assert '**Is Trashed**: False' in formatted
-    assert '**Is Version**: False' in formatted
-    assert 'DC Namespace' in formatted
-    assert 'COMMON Namespace' in formatted
-    assert 'NXTAG Namespace' in formatted
-    assert '| dc:title | Test Document |' in formatted
-    assert '| dc:description | This is a test document |' in formatted
-    assert '| dc:creator | Administrator |' in formatted
-    assert '| dc:contributors | Administrator, Guest |' in formatted
-    assert '| common:icon | *None* |' in formatted
-    assert '| nxtag:tags | *Empty list* |' in formatted
+    assert 'Document: Test Document' in content
+    assert '**UID**: dbaccb2c-7bbc-4326-9330-b1bc08dc9e09' in content
+    assert '**Type**: Root' in content
+    assert '**Path**: /' in content
+    assert '**Facets**: Folderish, NXTag, NotCollectionMember' in content
+    assert '**Is Proxy**: False' in content
+    assert '**Is Checked Out**: True' in content
+    assert '**Is Trashed**: False' in content
+    assert '**Is Version**: False' in content
+    assert 'DC Namespace' in content
+    assert 'COMMON Namespace' in content
+    assert 'NXTAG Namespace' in content
+    assert '| dc:title | Test Document |' in content
+    assert '| dc:description | This is a test document |' in content
+    assert '| dc:creator | Administrator |' in content
+    assert '| dc:contributors | Administrator, Guest |' in content
+    assert '| common:icon | *None* |' in content
+    assert '| nxtag:tags | *Empty list* |' in content
 
 
 @pytest.mark.unit
 def test_format_doc_empty() -> None:
     """Test that the format_doc function handles empty documents."""
-    assert format_doc({}) == "No document provided"
-    assert format_doc(None) == "No document provided"
+    result_empty = format_doc({})
+    result_none = format_doc(None)
+    
+    # Check that both return dictionaries with the expected structure
+    assert isinstance(result_empty, dict)
+    assert isinstance(result_none, dict)
+    
+    assert 'content' in result_empty
+    assert 'content_type' in result_empty
+    assert result_empty['content'] == "No document provided"
+    assert result_empty['content_type'] == 'text/plain'
+    
+    assert 'content' in result_none
+    assert 'content_type' in result_none
+    assert result_none['content'] == "No document provided"
+    assert result_none['content_type'] == 'text/plain'
 
 
 @pytest.mark.unit
