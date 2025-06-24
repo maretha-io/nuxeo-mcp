@@ -8,10 +8,11 @@ This module defines the tools for the Nuxeo MCP Server.
 import logging
 import json
 import os
-from typing import Any, Dict, Optional, Callable, List
-from nuxeo_mcp.utility import format_docs, format_page, format_doc, return_blob
+from typing import Any, Dict, Optional, Callable, List, Annotated
+from nuxeo_mcp.utility import format_docs, format_page, format_doc, return_blob, is_uuid
 from nuxeo.models import Document
-from fastmcp.utilities.types import Image
+from mcp.types import ImageContent as Image
+from pydantic import BaseModel, Field, model_validator
 
 # Configure logging
 logger = logging.getLogger("nuxeo_mcp.tools")
@@ -20,6 +21,17 @@ logger = logging.getLogger("nuxeo_mcp.tools")
 ToolFunction = Callable[[Dict[str, Any]], Dict[str, Any]]
 
 
+
+class DocRef(BaseModel):
+    path: Annotated[str | None,  Field(description="Repository path")] = None
+    uid:  Annotated[str | None,  Field(description="Nuxeo UID")]    = None
+
+    @model_validator(mode="after")
+    def one_of_path_or_uid(cls, v):
+        if bool(v.path) == bool(v.uid):          # both or neither
+            raise ValueError("Provide *exactly* one of 'path' or 'uid'")
+        return v
+    
 def register_tools(mcp, nuxeo) -> None:
     """
     Register MCP tools with the FastMCP server.
@@ -50,19 +62,26 @@ def register_tools(mcp, nuxeo) -> None:
     @mcp.tool(
         name="get_children",
         description="list children of a folder document ")
-    def get_children(uid:str|None = None, path:str|None = None) -> Dict[str, Any]:
+    
+    def get_children(ref: Annotated[str, Field(description="reference can be either a uuid or a path ")] ,
+                      as_resource: Annotated[bool, Field(description="Return Document as nuxeo:// resource")] = False,       
+) -> Dict[str, Any]:
         """
         List children from a parent document about the Nuxeo repository.
         
         Args: 
-            uid : the folder document uuid
-            path: the path of the folder document
+            ref: reference can be either a uuid or a path 
 
         Returns:
             List of documents
         """
 
-        return format_docs(nuxeo.documents.get_children(uid = uid, path = path))
+        if is_uuid(ref):
+            docs = nuxeo.documents.get_children(uid=ref)
+        else:
+            docs = nuxeo.documents.get_children(path=ref)       
+
+        return format_docs(docs, as_resource=as_resource)
 
 
     @mcp.tool(
@@ -347,11 +366,11 @@ def register_tools(mcp, nuxeo) -> None:
         name="get_document",
         description="Get a document from the Nuxeo repository")
     def get_document(
-        path: str = None,
-        uid: str = None,
-        fetch_blob: bool = False,
-        conversion_format: str = None,
-        rendition: str = None
+        ref: Annotated[str, Field(description="reference can be either a uuid or a path ")] ,       
+        fetch_blob: Annotated[bool, Field(description="Return main blob")] = False,
+        as_resource: Annotated[bool, Field(description="Return Document as nuxeo:// resource")] = False,
+        conversion_format: Annotated[str, Field(description="Convert the document to a different format 'pdf', 'html')")]="",
+        rendition: Annotated[str, Field(description="Fetch a specific rendition of the document (e.g., 'thumbnail')")] = ""
     ) -> str|bytes|Image:
         """
         Get a document from the Nuxeo repository.
@@ -372,43 +391,48 @@ def register_tools(mcp, nuxeo) -> None:
         - conversion_format: Convert the document to a different format (e.g., "pdf", "html")
         - rendition: Fetch a specific rendition of the document (e.g., "thumbnail")
         
+        ## Other parameters
+
+        - as_resource: Set to true to get a Nuxeo Resource.
+
         ## Example Usage
         
         Get a document by path:
         ```
-        get_document(path="/default-domain/workspaces/my-folder")
+        get_document(ref="/default-domain/workspaces/my-folder")
         ```
         
         Get a document by UID:
         ```
-        get_document(uid="12345678-1234-1234-1234-123456789012")
+        get_document(ref="12345678-1234-1234-1234-123456789012")
         ```
         
         Get a document's thumbnail:
         ```
         get_document(
-            path="/default-domain/workspaces/my-document",
+            ref="/default-domain/workspaces/my-document",
             rendition="thumbnail"
         )
         ```
         
         Args:
-            path: Path of the document (mutually exclusive with uid)
-            uid: UID of the document (mutually exclusive with path)
+            ref: reference can be either a uuid or a path 
             fetch_blob: Whether to fetch the document's blob
+            as_resource: Whether to fetch the document as a nuxeo:// resource
             conversion_format: Format to convert the document to (e.g., 'pdf')
             rendition: Rendition to fetch (e.g., 'thumbnail')
         
         Returns:
             The document formatted as markdown or the blob
         """
-        if not path and not uid:
-            raise ValueError("Either path or uid must be provided")
         
-        if path and uid:
-            raise ValueError("Only one of path or uid should be provided")
+        if is_uuid(ref):
+            doc = nuxeo.documents.get(uid=ref)
+        else:
+            doc = nuxeo.documents.get(path=ref)        
         
-        doc = nuxeo.documents.get(path=path, uid=uid)
+        if as_resource:
+            return f"nuxeo://{doc.uid}"
         
         # Handle blob operations if requested
         blob_info = {}

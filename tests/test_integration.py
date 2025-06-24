@@ -22,6 +22,7 @@ class MockFastMCP:
         self.name: str = name
         self.tools: List[Dict[str, Any]] = []
         self.resources: List[Dict[str, Any]] = []
+        self.prompts: List[Dict[str, Any]] = []
     
     def tool(self, name: str, description: str, input_schema: Optional[Dict[str, Any]] = None):
         def decorator(func):
@@ -39,6 +40,24 @@ class MockFastMCP:
             self.resources.append({"uri": uri, "name": name, "description": description, "func": func})
             return func
         return decorator
+    
+    def prompt(self, func=None):
+        if func is None:
+            def decorator(f):
+                self.prompts.append({
+                    "name": f.__name__,
+                    "description": f.__doc__ or "",
+                    "func": f
+                })
+                return f
+            return decorator
+        else:
+            self.prompts.append({
+                "name": func.__name__,
+                "description": func.__doc__ or "",
+                "func": func
+            })
+            return func
     
     
     def list_tools(self) -> List[Any]:
@@ -189,15 +208,11 @@ def test_get_children_tool(nuxeo_container: Any, nuxeo_url: str, nuxeo_credentia
     assert get_children_tool is not None, "get_children tool not found"
     
     # Call the tool with the path to the workspaces folder
-    result = get_children_tool(path="/default-domain/workspaces")
+    result = get_children_tool(ref="/default-domain/workspaces")
     
-    # Check the result
-    assert isinstance(result, dict), "Expected a dictionary result"
-    assert "content" in result, "Expected content key in result"
-    assert "content_type" in result, "Expected content_type key in result"
-    assert result["content_type"] == "text/markdown", "Expected markdown content type"
-    
-    content = result["content"]
+    # Check the result - now returns a string directly
+    assert isinstance(result, tuple), "Expected a tuple result"
+    content = result[0]
     assert "| uuid | name | title | type |" in content, "Expected table header in result"
     
     # The result should contain the seeded folder
@@ -233,13 +248,9 @@ def test_search_tool(nuxeo_container: Any, nuxeo_url: str, nuxeo_credentials: Tu
     # Call the tool with a query to find all folders
     result = search_tool(query="SELECT * FROM Folder")
     
-    # Check the result
-    assert isinstance(result, dict), "Expected a dictionary result"
-    assert "content" in result, "Expected content key in result"
-    assert "content_type" in result, "Expected content_type key in result"
-    assert result["content_type"] == "text/markdown", "Expected markdown content type"
-    
-    content = result["content"]
+    # Check the result - now returns a tuple with a string
+    assert isinstance(result, tuple), "Expected a tuple result"
+    content = result[0]
     assert "| uuid | name | title | type |" in content, "Expected table header in result"
     
     # The result should contain the seeded folder
@@ -312,13 +323,9 @@ def test_get_document_by_path_resource(nuxeo_container: Any, nuxeo_url: str, nux
     # Call the resource with the path to the root document
     result = get_document_by_path_resource("default-domain")
     
-    # Check the result
-    assert isinstance(result, dict), "Expected a dictionary result"
-    assert "content" in result, "Expected content key in result"
-    assert "content_type" in result, "Expected content_type key in result"
-    assert result["content_type"] == "text/markdown", "Expected markdown content type"
-    
-    content = result["content"]
+    # Check the result - now returns a string directly
+    assert isinstance(result, str), "Expected a string result"
+    content = result
     assert "# Document:" in content, "Expected document title in result"
     assert "**Type**: Domain" in content, "Expected document type in result"
     assert "**Path**: /default-domain" in content, "Expected document path in result"
@@ -363,13 +370,9 @@ def test_get_document_by_uid_resource(nuxeo_container: Any, nuxeo_url: str, nuxe
     # Call the resource with the UID of the root document
     result = get_document_by_uid_resource(root_uid)
     
-    # Check the result
-    assert isinstance(result, dict), "Expected a dictionary result"
-    assert "content" in result, "Expected content key in result"
-    assert "content_type" in result, "Expected content_type key in result"
-    assert result["content_type"] == "text/markdown", "Expected markdown content type"
-    
-    content = result["content"]
+    # Check the result - now returns a string directly
+    assert isinstance(result, str), "Expected a string result"
+    content = result
     assert "# Document:" in content, "Expected document title in result"
     assert "**Type**: Root" in content, "Expected document type in result"
     assert "**Path**: /" in content, "Expected document path in result"
