@@ -21,6 +21,7 @@ class MockFastMCP:
         self.name: str = name
         self.tools: List[Dict[str, Any]] = []
         self.resources: List[Dict[str, Any]] = []
+        self.prompts: List[Dict[str, Any]] = []
     
     def tool(self, name: str, description: str, input_schema: Optional[Dict[str, Any]] = None):
         def decorator(func):
@@ -38,6 +39,24 @@ class MockFastMCP:
             self.resources.append({"uri": uri, "name": name, "description": description, "func": func})
             return func
         return decorator
+    
+    def prompt(self, func=None):
+        if func is None:
+            def decorator(f):
+                self.prompts.append({
+                    "name": f.__name__,
+                    "description": f.__doc__ or "",
+                    "func": f
+                })
+                return f
+            return decorator
+        else:
+            self.prompts.append({
+                "name": func.__name__,
+                "description": func.__doc__ or "",
+                "func": func
+            })
+            return func
     
     
     def list_tools(self) -> List[Any]:

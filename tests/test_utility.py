@@ -37,13 +37,10 @@ def test_format_doc() -> None:
     # Format the document
     formatted = format_doc(doc)
     
-    # Check that the formatted document is a dictionary with content and content_type
-    assert isinstance(formatted, dict)
-    assert 'content' in formatted
-    assert 'content_type' in formatted
-    assert formatted['content_type'] == 'text/markdown'
+    # Check that the formatted document is a string (markdown)
+    assert isinstance(formatted, str)
     
-    content = formatted['content']
+    content = formatted
     
     # Check that the formatted document contains the expected information
     assert 'Document: Test Document' in content
@@ -72,19 +69,18 @@ def test_format_doc_empty() -> None:
     result_empty = format_doc({})
     result_none = format_doc(None)
     
-    # Check that both return dictionaries with the expected structure
-    assert isinstance(result_empty, dict)
+    # When document is None, it returns a dict
     assert isinstance(result_none, dict)
-    
-    assert 'content' in result_empty
-    assert 'content_type' in result_empty
-    assert result_empty['content'] == "No document provided"
-    assert result_empty['content_type'] == 'text/plain'
-    
     assert 'content' in result_none
     assert 'content_type' in result_none
     assert result_none['content'] == "No document provided"
     assert result_none['content_type'] == 'text/plain'
+    
+    # When document is empty dict, it returns a string (markdown)
+    assert isinstance(result_empty, str)
+    assert 'Document: Untitled' in result_empty
+    assert '**UID**: Unknown' in result_empty
+    assert '**Type**: Unknown' in result_empty
 
 
 @pytest.mark.unit

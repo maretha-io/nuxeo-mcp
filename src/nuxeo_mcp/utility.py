@@ -7,10 +7,29 @@ common tasks.
 """
 
 import re
-from typing import Dict, Any, List, Tuple, Set
+from typing import Dict, Any, List, Tuple, Set, Union
 from nuxeo.models import Document
-from fastmcp.utilities.types import Image
+from mcp.types import ImageContent as Image, TextContent as File
+from uuid import UUID
 
+def is_uuid(v: str) -> bool:
+    try:
+        # Try parsing as a UUID version 4 (adjust version if needed)
+        uuid_obj = UUID(v, version=4)
+    except ValueError:
+        return False
+    # Ensure the string matches the canonical dashed format
+    return str(uuid_obj) == v
+
+def format_as_markdown_file(md_data):
+    result = File(                  
+        data="\n".join(md_data).encode(),
+    #    name=f"doc_list_{id(docs)}.md",
+        format="text"
+    )
+    result._mime_type="text/markdown"
+
+    return result
 
 def format_result(result:Any) -> str|Image:
 
@@ -32,8 +51,11 @@ def format_page(result: Dict[str, Any]) -> str:
     return format_docs(result['entries'], md_output)
 
 
-def format_docs(docs: list[Document], md_output :list[str]|None=None) -> str:
+def format_docs(docs: list[Document], md_output :list[str]|None=None, as_resource:bool=False) -> str:
 
+    if as_resource:
+        return [f"nuxeo://{doc.uid}" for doc in docs]
+    
     if md_output is None:
         md_output :list[str]= []
 
@@ -43,22 +65,24 @@ def format_docs(docs: list[Document], md_output :list[str]|None=None) -> str:
     for doc in docs:
         md_output.append(f"| {doc.uid} | {doc.path.split('/')[-1]} | {doc.title} | {doc.type} |")
 
-    return {
-        "content" : "\n".join(md_output),
-        "content_type" : "text/markdown"
-    }
+    return "\n".join(md_output),
 
-def format_doc(doc: Dict[str, Any]|Document) -> Dict[str, str]:
+def format_doc(doc: Dict[str, Any]|Document, as_resource:bool = False ) -> Dict[str, str] | str:
     """
     Format a Nuxeo document as markdown text.
     
     Args:
         doc: A Nuxeo document as a dictionary
+        as_resource : ask for the output to be a resource (nuxeo://)
         
     Returns:
-        A dictionary with content and content_type keys
+        A dictionary with content and content_type keys or the uri of the Document 
     """
-    if not doc:
+    
+    if as_resource:
+        return f"nuxeo://{doc.uid}"
+
+    if doc is None:
         return {
             "content": "No document provided",
             "content_type": "text/plain"
@@ -132,12 +156,7 @@ def format_doc(doc: Dict[str, Any]|Document) -> Dict[str, str]:
             
             md_output += "\n"
     
-
-    return {
-        "content" : md_output,
-        "content_type" : "text/markdown"
-    }
-    #return md_output
+    return md_output
 
 
 def format_property_value(value: Any) -> str:

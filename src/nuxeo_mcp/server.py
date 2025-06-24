@@ -18,6 +18,7 @@ from nuxeo.client import Nuxeo
 # Import the tools, resources, and templates modules
 from .tools import register_tools
 from .resources import register_resources
+from .prompts import register_prompts
 
 # Configure logging
 logging.basicConfig(
@@ -63,16 +64,11 @@ class NuxeoMCPServer:
         )
         
         # Register tools and resources
-        self._register_tools()
-        self._register_resources()
-
-    def _register_tools(self) -> None:
-        """Register MCP tools."""
         register_tools(self.mcp, self.nuxeo)
-
-    def _register_resources(self) -> None:
-        """Register MCP resources."""
+        # Register MCP resources.
         register_resources(self.mcp, self.nuxeo)
+        # Register MCP prompts.
+        register_prompts(self.mcp, self.nuxeo)
 
 
     def run(self) -> None:
