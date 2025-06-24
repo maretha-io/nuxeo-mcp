@@ -10,6 +10,7 @@ import asyncio
 import json
 import sys
 from typing import Dict, Any, Optional
+from mcp.types import TextContent
 
 from fastmcp import Client
 
@@ -44,13 +45,12 @@ async def search(url: str, query: str, page_size: int = 20, page_index: int = 0)
                 "currentPageIndex": page_index
             })
             
-            # Handle different return types
-            if isinstance(result, tuple) and len(result) > 0:
-                # New API returns a tuple with markdown string
-                return {"content": result[0], "content_type": "text/markdown"}
-            elif isinstance(result, list) and len(result) > 0 and hasattr(result[0], 'text'):
-                # Old API returned a list of content objects
-                return json.loads(result[0].text)
+            for content in result:
+                if type(content) == TextContent:
+                    return content.text
+                else:
+                    print(f"#### Unhandled Content Type {type(content)} ")
+
             return result
     except Exception as e:
         print(f"Error in search: {e}")
@@ -104,19 +104,16 @@ async def get_document(url: str, path: Optional[str] = None, uid: Optional[str] 
         async with client:
             print("Connected successfully, calling get_document tool...")
             result = await client.call_tool("get_document", arguments)
-            
-            # Handle different return types
-            if isinstance(result, str):
-                # New API returns a string directly for document metadata
-                return {"content": result, "content_type": "text/markdown"}
-            elif isinstance(result, tuple) and len(result) > 0:
-                # New API returns a tuple with markdown string
-                return {"content": result[0], "content_type": "text/markdown"}
-            elif isinstance(result, list) and len(result) > 0 and hasattr(result[0], 'text'):
-                # Old API returned a list of content objects
-                return json.loads(result[0].text)
-            # For blobs, renditions, etc., return as is
+
+            for content in result:
+                if type(content) == TextContent:
+                    return content.text
+                else:
+                    print(f"#### Unhandled Content Type {type(content)} ")
+    
             return result
+        
+
     except Exception as e:
         print(f"Error in get_document: {e}")
         print(f"Error type: {type(e)}")
@@ -151,7 +148,8 @@ def main():
     elif args.command == "get-document":
         result = asyncio.run(get_document(args.url, args.path, args.uid, args.fetch_blob, 
                                         args.conversion_format, args.rendition))
-        print(json.dumps(result, indent=2))
+        print(result)
+        
     else:
         parser.print_help()
         sys.exit(1)
