@@ -44,8 +44,12 @@ async def search(url: str, query: str, page_size: int = 20, page_index: int = 0)
                 "currentPageIndex": page_index
             })
             
-            # The result might be a list of content objects, extract the text content
-            if isinstance(result, list) and len(result) > 0 and hasattr(result[0], 'text'):
+            # Handle different return types
+            if isinstance(result, tuple) and len(result) > 0:
+                # New API returns a tuple with markdown string
+                return {"content": result[0], "content_type": "text/markdown"}
+            elif isinstance(result, list) and len(result) > 0 and hasattr(result[0], 'text'):
+                # Old API returned a list of content objects
                 return json.loads(result[0].text)
             return result
     except Exception as e:
@@ -75,10 +79,12 @@ async def get_document(url: str, path: Optional[str] = None, uid: Optional[str] 
         raise ValueError("Either path or uid must be provided")
     
     arguments = {}
+    # Use ref parameter instead of path/uid
     if path:
-        arguments["path"] = path
-    if uid:
-        arguments["uid"] = uid
+        arguments["ref"] = path
+    elif uid:
+        arguments["ref"] = uid
+    
     if fetch_blob:
         arguments["fetch_blob"] = fetch_blob
     if conversion_format:
@@ -99,9 +105,17 @@ async def get_document(url: str, path: Optional[str] = None, uid: Optional[str] 
             print("Connected successfully, calling get_document tool...")
             result = await client.call_tool("get_document", arguments)
             
-            # The result might be a list of content objects, extract the text content
-            if isinstance(result, list) and len(result) > 0 and hasattr(result[0], 'text'):
+            # Handle different return types
+            if isinstance(result, str):
+                # New API returns a string directly for document metadata
+                return {"content": result, "content_type": "text/markdown"}
+            elif isinstance(result, tuple) and len(result) > 0:
+                # New API returns a tuple with markdown string
+                return {"content": result[0], "content_type": "text/markdown"}
+            elif isinstance(result, list) and len(result) > 0 and hasattr(result[0], 'text'):
+                # Old API returned a list of content objects
                 return json.loads(result[0].text)
+            # For blobs, renditions, etc., return as is
             return result
     except Exception as e:
         print(f"Error in get_document: {e}")
