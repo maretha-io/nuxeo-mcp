@@ -10,9 +10,6 @@ LABEL com.hyland.mcp-demo.build-tag=$BUILD_TAG
 LABEL com.hyland.mcp-demo.scm-ref=$SCM_REF
 LABEL com.hyland.mcp-demo.version=$VERSION
 
-# COPY --chmod only supports octal notation, using 775 that is equivalent to rwxrwxr-x
-COPY --chown=900:0 --chmod=775 rootfs /
-
 USER root
 # install RPM Fusion free repository
 RUN dnf -y install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm \
@@ -26,4 +23,7 @@ RUN --mount=type=secret,id=CLID,env=CLID /install-packages.sh --clid ${CLID} \
     nuxeo-opensearch1-embed \
     nuxeo-search-client-opensearch1 \
     nuxeo-showcase-content \
-    nuxeo-web-ui \
+    nuxeo-web-ui
+
+# COPY --chmod only supports octal notation, using 775 that is equivalent to rwxrwxr-x
+COPY --chown=900:0 --chmod=775 rootfs /
