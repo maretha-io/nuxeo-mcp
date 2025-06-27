@@ -21,4 +21,9 @@ RUN dnf -y install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-
 USER 900
 
 # Install remote packages
-RUN --mount=type=secret,id=CLID,env=CLID /install-packages.sh --clid ${CLID} nuxeo-audit-opensearch1 nuxeo-opensearch1-embed nuxeo-search-client-opensearch1 nuxeo-showcase-content nuxeo-web-ui
+RUN --mount=type=secret,id=CLID,env=CLID /install-packages.sh --clid ${CLID} \
+    nuxeo-audit-opensearch1 \
+    nuxeo-opensearch1-embed \
+    nuxeo-search-client-opensearch1 \
+    nuxeo-showcase-content \
+    nuxeo-web-ui \
