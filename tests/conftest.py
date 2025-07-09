@@ -196,7 +196,10 @@ def nuxeo_container(docker_client: docker.DockerClient, request: pytest.FixtureR
 
     # Stop and remove the container after tests
     print("Stopping Nuxeo container...", flush=True)
-    container.stop()
+    try:
+        container.stop()
+    except docker.errors.NotFound:
+        print("Container no longer exists.")
 
 
 @pytest.fixture(scope="session")
