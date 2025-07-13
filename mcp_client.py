@@ -15,7 +15,13 @@ from mcp.types import TextContent
 from fastmcp import Client
 
 
-async def search(url: str, query: str, page_size: int = 20, page_index: int = 0) -> Dict[str, Any]:
+async def search(
+    url: str,
+    query: str,
+    page_size: int = 20,
+    page_index: int = 0,
+    content_type: str = "text/markdown",
+) -> dict[str, Any]:
     """
     Search for documents using the search tool.
     
@@ -39,19 +45,23 @@ async def search(url: str, query: str, page_size: int = 20, page_index: int = 0)
         
         async with client:
             print("Connected successfully, calling search tool...")
-            result = await client.call_tool("search", {
-                "query": query,
-                "pageSize": page_size,
-                "currentPageIndex": page_index
-            })
-            
-            for content in result:
-                if type(content) == TextContent:
-                    return content.text
-                else:
-                    print(f"#### Unhandled Content Type {type(content)} ")
+            result = await client.call_tool(
+                "search",
+                {
+                    "content_type": content_type,
+                    "query": query,
+                    "pageSize": page_size,
+                    "currentPageIndex": page_index,
+                },
+            )
+            match content_type:
+                case "application/json":
+                    return json.dumps(result.structured_content, indent=2)
+                case "text/markdown":
+                    return result.structured_content["content"][0]
+                case _:
+                    return result
 
-            return result
     except Exception as e:
         print(f"Error in search: {e}")
         print(f"Error type: {type(e)}")
@@ -131,7 +141,12 @@ def main():
     search_parser.add_argument("query", help="NXQL query")
     search_parser.add_argument("--page-size", type=int, default=20, help="Number of results per page")
     search_parser.add_argument("--page-index", type=int, default=0, help="Page index")
-    
+    search_parser.add_argument(
+        "--content-type",
+        help="The format of the output: application/json, text/markdown",
+        default="text/markdown"
+    )
+
     # Get document command
     get_doc_parser = subparsers.add_parser("get-document", help="Get a document")
     get_doc_parser.add_argument("--path", help="Path of the document")
@@ -143,8 +158,17 @@ def main():
     args = parser.parse_args()
     
     if args.command == "search":
-        result = asyncio.run(search(args.url, args.query, args.page_size, args.page_index))
-        print(json.dumps(result, indent=2))
+        print(
+            asyncio.run(
+                search(
+                    args.url,
+                    args.query,
+                    args.page_size,
+                    args.page_index,
+                    args.content_type,
+                )
+            )
+        )
     elif args.command == "get-document":
         result = asyncio.run(get_document(args.url, args.path, args.uid, args.fetch_blob, 
                                         args.conversion_format, args.rendition))

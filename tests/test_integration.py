@@ -246,17 +246,44 @@ def test_search_tool(nuxeo_container: Any, nuxeo_url: str, nuxeo_credentials: Tu
     assert search_tool is not None, "search tool not found"
     
     # Call the tool with a query to find all folders
-    result = search_tool(query="SELECT * FROM Folder")
-    
-    # Check the result - now returns a tuple with a string
-    assert isinstance(result, tuple), "Expected a tuple result"
-    content = result[0]
-    assert "| uuid | name | title | type |" in content, "Expected table header in result"
-    
+    result = search_tool(content_type="application/json", query="SELECT * FROM Folder")
+
+    # Check the result
+    assert isinstance(result, dict), "Expected a structured result"
+
+    assert result["content_type"] == "application/json"
+    structured_content = result["content"]
+    assert isinstance(structured_content, dict), "Expected a structured result"
+
+    assert "resultsCount" in structured_content
+    assert isinstance(structured_content["resultsCount"], int)
+    assert "pageIndex" in structured_content
+    assert isinstance(structured_content["pageIndex"], int)
+    assert "pageCount" in structured_content
+    assert isinstance(structured_content["pageCount"], int)
+    assert "documents" in structured_content
+    assert isinstance(structured_content["documents"], list)
+
     # The result should contain the seeded folder
-    assert "MCP Test Folder" in content, "Expected seeded folder in result"
-    
-    print(f"Search results for 'SELECT * FROM Folder':\n{content}")
+    docs = structured_content["documents"]
+    assert any(
+        isinstance(x, str) and x.startswith("MCP Test Folder") for t in docs for x in t
+    ), "Expected seeded folder in result"
+    print(f"Search results for 'SELECT * FROM Folder':\n{docs}")
+
+    result = search_tool(content_type="text/markdown", query="SELECT * FROM Folder")
+    # Check the result - now returns a tuple with a string
+    assert isinstance(result, dict), "Expected a tuple result"
+    content = result["content"]
+    assert isinstance(content, tuple), "Expected a tuple result"
+    assert "| uuid | name | title | type |" in content[0], (
+        "Expected table header in result"
+    )
+
+    # The result should contain the seeded folder
+    assert "MCP Test Folder" in content[0], "Expected seeded folder in result"
+
+    print(f"Search results for 'SELECT * FROM Folder':\n{content[0]}")
 
 
 @pytest.mark.integration

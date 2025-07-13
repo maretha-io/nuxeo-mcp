@@ -40,19 +40,45 @@ def format_result(result:Any) -> str|Image:
 
     return None
 
-def format_page(result: Dict[str, Any]) -> str:
 
-    md_output :list[str]= []
+def format(result: dict[str, Any], content_type="application/json") -> dict[str, Any]:
+    match content_type:
+        case "text/markdown":
+            return format_page(result)
+        case "application/json":
+            return format_json(result)
 
+
+def format_page(result: Dict[str, Any]) -> dict[str, Any]:
+    md_output: list[str] = []
     md_output.append(f" resultsCount: {result['resultsCount']}")
     md_output.append(f" pageIndex: {result['pageIndex']}")
     md_output.append(f" pageCount: {result['pageCount']}")
-    
-    return format_docs(result['entries'], md_output)
+
+    return {
+        "content_type": "text/markdown",
+        "content": format_docs(result["entries"], md_output),
+    }
 
 
-def format_docs(docs: list[Document], md_output :list[str]|None=None, as_resource:bool=False) -> str:
+def format_json(result: dict[str, Any]) -> dict[str, Any]:
+    json_output: dict[str, Any] = {
+        "resultsCount": result["resultsCount"],
+        "pageIndex": result["pageIndex"],
+        "pageCount": result["pageCount"],
+    }
 
+    documents: list[tuple[Any, ...]] = []
+    for doc in result["entries"]:
+        documents.append((doc.uid, doc.path.split("/")[-1], doc.title, doc.type))
+
+    json_output["documents"] = documents
+    return {"content_type": "application/json", "content": json_output}
+
+
+def format_docs(
+    docs: list[Document], md_output: list[str] | None = None, as_resource: bool = False
+) -> str:
     if as_resource:
         return [f"nuxeo://{doc.uid}" for doc in docs]
     

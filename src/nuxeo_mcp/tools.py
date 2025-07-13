@@ -9,7 +9,13 @@ import logging
 import json
 import os
 from typing import Any, Dict, Optional, Callable, List, Annotated
-from nuxeo_mcp.utility import format_docs, format_page, format_doc, return_blob, is_uuid
+from nuxeo_mcp.utility import (
+    format,
+    format_docs,
+    format_doc,
+    return_blob,
+    is_uuid,
+)
 from nuxeo.models import Document
 from mcp.types import ImageContent as Image
 from pydantic import BaseModel, Field, model_validator
@@ -83,11 +89,13 @@ def register_tools(mcp, nuxeo) -> None:
 
         return format_docs(docs, as_resource=as_resource)
 
-
-    @mcp.tool(
-        name="search",
-        description="search document using a NXQL query")
-    def search(query:str, pageSize:int=20, currentPageIndex:int=0) -> Dict[str, Any]:
+    @mcp.tool(name="search", description="search document using a NXQL query")
+    def search(
+        query: str,
+        pageSize: int = 20,
+        currentPageIndex: int = 0,
+        content_type="application/json",
+    ) -> dict[str, Any]:
         """
         Executes a Nuxeo Query Language (NXQL) statement and returns the matching documents.
 
@@ -129,7 +137,7 @@ def register_tools(mcp, nuxeo) -> None:
                 "content_type" : format used - for example "text/markdown"
         """
 
-        return format_page(nuxeo.documents.query({"query" : query, "pageSize" : pageSize, "currentPageIndex": currentPageIndex }))
+        return format(nuxeo.documents.query({"query" : query, "pageSize" : pageSize, "currentPageIndex": currentPageIndex }), content_type)
 
 
     @mcp.tool(

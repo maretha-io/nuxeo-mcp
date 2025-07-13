@@ -75,7 +75,10 @@ def docker_client(request: pytest.FixtureRequest) -> docker.DockerClient:
 
 
 # Get the Nuxeo Docker image from environment variable or use default
-NUXEO_DOCKER = os.environ.get("NUXEO_DOCKER_IMAGE", "nuxeo/nuxeo-2025:latest")
+NUXEO_DOCKER = os.environ.get(
+    "NUXEO_DOCKER_IMAGE", "docker-private.packages.nuxeo.com/nuxeo/nuxeo:2025"
+)
+
 
 @pytest.fixture(scope="session")
 def nuxeo_container(docker_client: docker.DockerClient, request: pytest.FixtureRequest) -> Generator[Optional[docker.models.containers.Container], None, None]:
@@ -193,7 +196,10 @@ def nuxeo_container(docker_client: docker.DockerClient, request: pytest.FixtureR
 
     # Stop and remove the container after tests
     print("Stopping Nuxeo container...", flush=True)
-    container.stop()
+    try:
+        container.stop()
+    except docker.errors.NotFound:
+        print("Container no longer exists.")
 
 
 @pytest.fixture(scope="session")
