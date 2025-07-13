@@ -41,6 +41,46 @@ NUXEO_URL="http://mynuxeo.example.com/nuxeo" NUXEO_USERNAME="admin" NUXEO_PASSWO
 - [Developer Guide](DEVELOPER.md) - How to build, run tests, and extend the project
 - [Usage Guide](USAGE.md) - How to use the MCP Server
 
+## Docker
+
+### Building the Docker Image
+
+You can build a Docker image for the nuxeo-mcp server using the Dockerfile provided at the root of the project:
+
+```bash
+# Build the Docker image with the name nuxeo-mcp-server
+docker build -t nuxeo-mcp-server .
+```
+
+To build a x86 compatible image on a arm device:
+
+```bash
+docker buildx build --platform linux/amd64 -t nuxeo-mcp-server:latest .
+```
+
+
+### Running the Docker Container
+
+Once built, you can run the nuxeo-mcp server in a Docker container:
+
+```bash
+# Run the container, exposing port 8080
+docker run -p 8080:8080 --name nuxeo-mcp nuxeo-mcp-server
+```
+
+### Environment Variables
+
+You can configure the nuxeo-mcp server using environment variables:
+
+```bash
+# Run with custom Nuxeo connection settings
+docker run -p 8080:8080 \
+  -e NUXEO_URL="http://mynuxeo.example.com/nuxeo" \
+  -e NUXEO_USERNAME="admin" \
+  -e NUXEO_PASSWORD="secret" \
+  nuxeo-mcp-server
+```
+
 ## Configuring with Cline
 
 To use the Nuxeo MCP server with Cline, you need to add a configuration to your Cline MCP settings file. See the [Nuxeo MCP Server Configuration Examples](./nuxeo_mcp_config.md) for detailed examples of how to configure the server with different transport options.
