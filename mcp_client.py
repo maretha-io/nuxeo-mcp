@@ -7,6 +7,7 @@ A command-line client for interacting with the Nuxeo MCP Server using the FastMC
 
 import argparse
 import asyncio
+from collections.abc import Iterable
 import json
 import sys
 from typing import Dict, Any, Optional
@@ -115,12 +116,13 @@ async def get_document(url: str, path: Optional[str] = None, uid: Optional[str] 
             print("Connected successfully, calling get_document tool...")
             result = await client.call_tool("get_document", arguments)
 
-            for content in result:
-                if type(content) == TextContent:
-                    return content.text
-                else:
-                    print(f"#### Unhandled Content Type {type(content)} ")
-    
+            if isinstance(result, Iterable):
+                for content in result:
+                    if type(content) == TextContent:
+                        return content.text
+                    else:
+                        print(f"#### Unhandled Content Type {type(content)} ")
+
             return result
         
 
