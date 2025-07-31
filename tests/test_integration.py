@@ -23,6 +23,7 @@ class MockFastMCP:
         self.tools: List[Dict[str, Any]] = []
         self.resources: List[Dict[str, Any]] = []
         self.prompts: List[Dict[str, Any]] = []
+        self.custom_routes: List[Dict[str, Any]] = []
     
     def tool(self, name: str, description: str, input_schema: Optional[Dict[str, Any]] = None):
         def decorator(func):
@@ -59,6 +60,16 @@ class MockFastMCP:
             })
             return func
     
+    def custom_route(self, path: str, methods: Optional[List[str]] = None):
+        """Mock custom_route decorator for health check endpoint."""
+        def decorator(func):
+            self.custom_routes.append({
+                "path": path,
+                "methods": methods or ["GET"],
+                "func": func
+            })
+            return func
+        return decorator
     
     def list_tools(self) -> List[Any]:
         return [type('Tool', (), {'name': t['name']}) for t in self.tools]
