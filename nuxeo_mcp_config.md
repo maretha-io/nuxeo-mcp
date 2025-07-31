@@ -1,8 +1,14 @@
+# Running Nuxeo and MCP
+
+    docker-compose build --no-cache
+    
+    docker-compose -f docker-compose-demo.yml up
+
 # Nuxeo MCP Server Configuration Examples
 
 This document provides examples of how to configure the Nuxeo MCP server in your Cline MCP settings file.
 
-## Example 1: Using stdio Transport
+## Example using stdio Transport
 
 This configuration uses the stdio transport, which is the default transport for MCP servers. It's suitable for most use cases and provides good performance.
 
@@ -25,24 +31,17 @@ This configuration uses the stdio transport, which is the default transport for 
 }
 ```
 
-## Example 2: Using HTTP Transport
+## Example using HTTP Transport
 
 This configuration uses the HTTP transport, which can be useful in certain scenarios, such as when you need to access the MCP server from a different machine or when you want to use tools like curl to interact with the server directly.
+
+for `http-streamable`
 
 ```json
 {
   "mcpServers": {
     "NuxeoMCP": {
-      "command": "bash",
-      "args": ["-c", "source /Users/thierry.delprat/dev/nuxeo-mcp/venv/bin/activate && python -m nuxeo_mcp"],
-      "env": {
-        "NUXEO_URL": "http://localhost:8080/nuxeo",
-        "NUXEO_USERNAME": "Administrator",
-        "NUXEO_PASSWORD": "Administrator",
-        "MCP_TRANSPORT": "http",
-        "MCP_HTTP_PORT": "8123",
-        "MCP_HTTP_HOST": "localhost"
-      },
+      "url": "http://127.0.0.1:8081/mcp",
       "disabled": false,
       "autoApprove": []
     }
@@ -50,23 +49,15 @@ This configuration uses the HTTP transport, which can be useful in certain scena
 }
 ```
 
-## Example 3: Using Both stdio and HTTP Transports
-
-This configuration uses both stdio and HTTP transports, which provides the best compatibility with different clients. The stdio transport is used for direct communication with Cline, while the HTTP transport allows other tools to interact with the server.
+for `http-sse`
 
 ```json
 {
   "mcpServers": {
     "NuxeoMCP": {
-      "command": "bash",
-      "args": ["-c", "source /Users/thierry.delprat/dev/nuxeo-mcp/venv/bin/activate && python -m nuxeo_mcp"],
-      "env": {
-        "NUXEO_URL": "http://localhost:8080/nuxeo",
-        "NUXEO_USERNAME": "Administrator",
-        "NUXEO_PASSWORD": "Administrator",
-        "MCP_TRANSPORT": "http+stdio",
-        "MCP_HTTP_PORT": "8123"
-      },
+      "url": "http://127.0.0.1:8081/sse",
+      "description": "Remote Nuxeo MCP Server",
+      "tool_timeout": 10,
       "disabled": false,
       "autoApprove": []
     }

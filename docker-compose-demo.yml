@@ -1,8 +1,6 @@
-version: '3'
-
 services:
   nuxeo:
-    image: docker-private.packages.nuxeo.com/nuxeo/nuxeo:2025
+    image: docker-internal.packages.nuxeo.com/nuxeo/nuxeo-mcp-demo:2025
     environment:
       - NUXEO_DEV_MODE=true
     ports:
@@ -24,6 +22,18 @@ services:
       - nuxeo
     networks:
       - mcp-network
+
+  agent0:
+    image: agent0ai/agent-zero
+    environment:
+      - NUXEO_DEV_MODE=true
+    ports:
+      - "50001:80"
+    depends_on:
+      - mcp
+    networks:
+      - mcp-network
+
 
 networks:
   mcp-network:

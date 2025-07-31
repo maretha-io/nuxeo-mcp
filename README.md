@@ -64,8 +64,8 @@ docker buildx build --platform linux/amd64 -t nuxeo-mcp-server:latest .
 Once built, you can run the nuxeo-mcp server in a Docker container:
 
 ```bash
-# Run the container, exposing port 8080
-docker run -p 8080:8080 --name nuxeo-mcp nuxeo-mcp-server
+# Run the container, exposing port 8181
+docker run -p 8181:8181 --name nuxeo-mcp nuxeo-mcp-server
 ```
 
 ### Environment Variables
@@ -74,11 +74,19 @@ You can configure the nuxeo-mcp server using environment variables:
 
 ```bash
 # Run with custom Nuxeo connection settings
-docker run -p 8080:8080 \
+docker run -p 8181:8181 \
   -e NUXEO_URL="http://mynuxeo.example.com/nuxeo" \
   -e NUXEO_USERNAME="admin" \
   -e NUXEO_PASSWORD="secret" \
   nuxeo-mcp-server
+```
+
+### Server Mode
+
+By default, the Docker image runs the server in SSE (Server-Sent Events) mode on port 8181. If you want to run it in HTTP mode instead, you can override the command:
+
+```bash
+docker run -p 8181:8181 --name nuxeo-mcp nuxeo-mcp-server python -m nuxeo_mcp --http --port 8181
 ```
 
 ## Configuring with Cline
