@@ -19,11 +19,32 @@ EXPOSE 8181
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
+ENV MCP_MODE=sse
+ENV MCP_PORT=8181
+ENV MCP_HOST=0.0.0.0
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8181/health || exit 1
+  CMD curl -f http://localhost:${MCP_PORT}/health || exit 1
 
-# Run the server in HTTP mode
-#CMD ["python", "-m", "nuxeo_mcp", "--http", "--port", "8181"]
-CMD ["python", "-m", "nuxeo_mcp", "--sse", "--port", "8181"]
+# Create entrypoint script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+# Default values\n\
+MODE=${MCP_MODE:-sse}\n\
+PORT=${MCP_PORT:-8181}\n\
+HOST=${MCP_HOST:-0.0.0.0}\n\
+\n\
+# Start the server based on the mode\n\
+if [ "$MODE" = "http" ]; then\n\
+    exec python -m nuxeo_mcp --http --port "$PORT" --host "$HOST"\n\
+elif [ "$MODE" = "sse" ]; then\n\
+    exec python -m nuxeo_mcp --sse --port "$PORT" --host "$HOST"\n\
+else\n\
+    echo "Invalid MCP_MODE: $MODE. Use either '\''http'\'' or '\''sse'\''."\n\
+    exit 1\n\
+fi' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+
+# Use the entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]

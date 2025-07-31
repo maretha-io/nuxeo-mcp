@@ -53,6 +53,21 @@ spec:
             secretKeyRef:
               name: nuxeo-mcp-secret
               key: password
+        - name: MCP_MODE
+          valueFrom:
+            configMapKeyRef:
+              name: nuxeo-mcp-config
+              key: mcp_mode
+        - name: MCP_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: nuxeo-mcp-config
+              key: mcp_port
+        - name: MCP_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: nuxeo-mcp-config
+              key: mcp_host
         livenessProbe:
           httpGet:
             path: /health
@@ -110,6 +125,9 @@ metadata:
   name: nuxeo-mcp-config
 data:
   nuxeo_url: "http://nuxeo-service:8080/nuxeo"
+  mcp_mode: "sse"
+  mcp_port: "8181"
+  mcp_host: "0.0.0.0"
 ```
 
 ### Secret
