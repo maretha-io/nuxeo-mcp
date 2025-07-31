@@ -29,7 +29,7 @@ Build a native `arm64` image to verify that your Dockerfile and context are corr
 docker buildx build \
   --platform linux/arm64 \
   --load \
-  -t nuxeo-mcp-am64:latest \
+  -t nuxeo-mcp-arm64:latest \
   .
 ```
 

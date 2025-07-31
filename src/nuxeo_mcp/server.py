@@ -12,7 +12,6 @@ import argparse
 import sys
 from typing import Any, Dict, List, Optional, Type, Callable, TypeVar, Union, cast
 
-from fastapi import FastAPI
 from fastmcp import FastMCP
 from nuxeo.client import Nuxeo
 
@@ -20,6 +19,8 @@ from nuxeo.client import Nuxeo
 from .tools import register_tools
 from .resources import register_resources
 from .prompts import register_prompts
+from starlette.requests import Request
+from starlette.responses import PlainTextResponse
 
 # Configure logging
 logging.basicConfig(
@@ -64,6 +65,8 @@ class NuxeoMCPServer:
             name="nuxeo-mcp-server",
         )
         
+
+        add_healthcheck(self.mcp)
         # Register tools and resources
         register_tools(self.mcp, self.nuxeo)
         # Register MCP resources.
@@ -77,17 +80,12 @@ class NuxeoMCPServer:
         self.mcp.run()
 
 
-def create_health_app() -> FastAPI:
-    """Create a FastAPI app for health checks."""
-    app = FastAPI()
 
-    @app.get("/health")
-    async def health_check():
-        """Health check endpoint."""
-        return {"status": "ok"}
+def add_healthcheck(mcp):
 
-    return app
-
+    @mcp.custom_route("/health", methods=["GET"])
+    async def health_check(request: Request) -> PlainTextResponse:
+        return PlainTextResponse("OK")
 
 def main() -> None:
     """Run the Nuxeo MCP server."""
@@ -111,9 +109,6 @@ def main() -> None:
         password=password,
     )
     
-    # Create a FastAPI app for health checks
-    health_app = create_health_app()
-
     # Run the server in the appropriate mode
     if args.http:
         logger.info(f"Starting MCP server in HTTP mode on {args.host}:{args.port}")
@@ -123,7 +118,6 @@ def main() -> None:
                 transport="streamable-http",
                 host=args.host,
                 port=args.port,
-                health_app=health_app  # Pass the health app to FastMCP
             )
         except Exception as e:
             logger.error(f"Error starting HTTP server: {e}")
@@ -138,7 +132,6 @@ def main() -> None:
                 transport="sse",
                 host=args.host,
                 port=args.port,
-                health_app=health_app  # Pass the health app to FastMCP
             )
         except Exception as e:
             logger.error(f"Error starting HTTP server: {e}")
