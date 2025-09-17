@@ -105,7 +105,7 @@ This guide provides information for developers who want to build, run tests, and
 
 ```bash
 git clone https://github.com/tiry/nx-mcp-poc.git
-cd nx-mcp-poc
+cd nx-mcp
 ```
 
 2. Create a virtual environment and install dependencies:
